@@ -1,3 +1,8 @@
+/* =========================
+   Daily Update - Full CSS
+   ========================= */
+
+/* ----- theme vars ----- */
 :root{
   --bg:#f5f7fb;
   --panel:#ffffff;
@@ -5,40 +10,63 @@
   --accent:#2563eb;
   --border:#e6e9ee;
   --cell-border:#d6d9de;
-}
-*{box-sizing:border-box}
-html,body{height:100%;} /* ensure flex children can fill viewport */
-body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#0f172a}
 
-/* App layout */
+  --sidebar-w: 220px;   /* change to adjust sidebar width in one place */
+  --topbar-h: 56px;
+}
+
+/* ----- page/base ----- */
+* { box-sizing: border-box; }
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: #0f172a;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  /* Keep page-level horizontal overflow visible so inner scroller can work properly.
+     Do not set overflow-x:hidden here. */
+  overflow-x: visible;
+}
+
+/* ----- app layout ----- */
 .app {
-  display: flex;
-  height: 100vh;
-  overflow: hidden; /* prevents page-wide scroll */
-  min-width: 0;     /* allow children to overflow instead of expanding page */
+  display: block; /* treat top-level as non-flex so sidebar can be fixed; content uses margin */
+  min-height: 100vh;
+  min-width: 0;
 }
 
-/* Sidebar (fixed width, never shrink) */
+/* ----- sidebar: fixed to viewport ----- */
 .sidebar{
-  width:220px;
-  background:linear-gradient(#fff,#fbfdff);
-  border-right:1px solid var(--border);
-  padding:18px 12px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  flex-shrink: 0; 
+  width: var(--sidebar-w);
+  height: 100vh;
+  position: fixed;         /* important: stays fixed in the viewport */
+  left: 0;
+  top: 0;
+  padding: 18px 12px;
+  background: linear-gradient(#fff,#fbfdff);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 40;             /* above table headers but below any overlays/modals */
+  box-shadow: none;
+  box-sizing: border-box;
 }
+
+/* small utility inside sidebar */
+.sheets-list { display:flex; flex-direction:column; gap:6px; margin-top:6px; overflow:auto; max-height:60vh; }
+.sheet-btn { background:transparent; border:1px solid transparent; padding:8px 10px; border-radius:8px; text-align:left; cursor:pointer; color:#0f172a; }
+.sheet-btn.active { background:var(--accent); color:white; }
+.add-tab-btn { margin-top:6px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:white; cursor:pointer; }
+
 /* push the bottom area to the bottom of the sidebar */
 .sidebar-bottom {
-  margin-top: auto;    /* pushes this block to the bottom in a column flex container */
+  margin-top: auto;
   display: flex;
   align-items: center;
   gap: 8px;
   padding-top: 8px;
 }
-
-/* nicer export button */
 .sidebar-bottom button {
   padding: 8px 10px;
   border-radius: 8px;
@@ -47,158 +75,185 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
   cursor: pointer;
 }
 
-/* Content area MUST allow children to overflow horizontally */
-.content{
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  padding:12px;
-  gap:12px;
-  min-width: 0; /* CRITICAL: allows the .table-wrap to scroll without shrinking sidebar */
+/* ----- content (pushed right of fixed sidebar) ----- */
+.content {
+  height: 100vh;        /* fill the viewport */
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-w);
+  padding: 12px;
+  box-sizing: border-box;
+}
+.page {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;     /* IMPORTANT: prevent page-level scrolling, let .table-scroll handle it */
 }
 
-/* Top bar and page container */
-.topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:linear-gradient(#fff,#fbfdff);border-radius:8px;border:1px solid var(--border)}
-.title{font-weight:600}
-.meta{color:var(--muted);font-size:13px}
-
-.page{
-  background:var(--panel);
-  border-radius:8px;
-  padding:12px;
-  border:1px solid var(--border);
-  flex:1;
-  display:flex;
-  flex-direction:column;
-  min-width:0; /* allow inner scroll container to work */
+/* ----- topbar: sticky within content area ----- */
+.topbar {
+  position: sticky;     /* remains visible during vertical scroll inside .content */
+  top: 12px;            /* distance from viewport top (adjust if necessary) */
+  z-index: 30;          /* less than sidebar but above table */
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 12px;
+  background: linear-gradient(#fff,#fbfdff);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: hidden;     /* prevent children wrapping and pushing height */
 }
-.hidden{display:none}
+.title { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta { color: var(--muted); font-size: 13px; }
 
-.controls{display:flex;gap:8px;margin-bottom:8px}
-.controls button{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:white;cursor:pointer}
-
-/* ----------------------
-   SCROLLABLE TABLE AREA
-   ---------------------- */
-
-/* Use the .table-wrap as the horizontal scroll container */
-.table-wrap{
-  flex:1;                  /* grow to fill vertical space */
-  overflow-x:auto;         /* horizontal scrollbar when needed */
-  overflow-y:auto;         /* allow vertical scrolling inside the table area */
-  border:1px solid var(--cell-border);
-  border-radius:6px;
-  background:white;
-  min-width:0;             /* IMPORTANT in flex layouts */
-  -webkit-overflow-scrolling: touch; /* smoother scrolling on mobile */
-}
-
-/* Optional helper (if you still have .table-scroll in HTML) keep it consistent */
-.table-scroll{
-  /* same behavior so either class works */
-  flex:1;
-  overflow-x:auto;
-  overflow-y:auto;
-  min-width:0;
+/* ----- page container that holds the table ----- */
+.page {
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-/* Table layout: let the table size to its content width */
-.sheet{
-  border-collapse:collapse;
-  width: max-content;      /* allow the table to be as wide as its columns */
-  /* removed min-width:100% to allow overflow; don't force table to exactly container width */
+/* controls */
+.controls { display:flex; gap:8px; margin-bottom:8px; }
+.controls button { padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:white; cursor:pointer; }
+
+/* ----- TABLE SCROLLING AREA (ONLY scroller for horizontal) ----- */
+/* This is the element that provides the horizontal scrollbar; keep it block-level and relative. */
+.table-scroll {
+  display: block;           /* reliable overflow behavior across browsers */
+  position: relative;       /* sticky children anchor to this scroller */
+  width: 100%;
+  flex: 1 1 auto;           /* fill the available vertical space inside .page */
+  min-height: 0;            /* critical so this area can shrink and show scrollbars */
+  overflow-x: auto;         /* horizontal scrolling happens here only */
+  overflow-y: auto;         /* allow vertical scroll for long tables */
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--cell-border);
+  border-radius: 6px;
+  background: transparent;  /* page/panel background lives in .page */
+  box-sizing: border-box;
 }
 
-/* Table / header styles */
-.sheet thead th{
-  position:sticky;
-  top:0;
-  background:#fafafa;
-  border-bottom:1px solid var(--cell-border);
-  z-index:4;
-  padding:10px;
-  font-weight:600;
-  color:var(--muted);
-  text-align:left;
+/* ensure scrollbars are visible on webkit systems (optional cosmetic) */
+.table-scroll::-webkit-scrollbar { height: 12px; width: 12px; }
+.table-scroll::-webkit-scrollbar-thumb { border-radius: 8px; background: rgba(0,0,0,0.12); }
+
+/* ----- TABLE ----- */
+/* Let the table be only as wide as its content (so it triggers .table-scroll) */
+.sheet {
+  display: inline-table;   /* intrinsic width, but won't force page overflow */
+  width: auto;
+  table-layout: auto;
+  border-collapse: collapse;
+  min-width: 0;
+  white-space: nowrap;     /* optional: prevent wrapping inside cells */
 }
 
-/* sticky left header label */
-.sheet thead th.row-label{
-  left:0;
-  position:sticky;
-  z-index:6; /* higher than other headers so it stays above */
-  background:#f7f9fb;
-  border-right:1px solid var(--cell-border);
-  width:80px;
+/* header cells */
+.sheet thead th {
+  position: sticky;
+  top: 0;
+  z-index: 12;                       /* atop table body but below sidebar */
+  background: var(--panel);          /* same as panel so header visual extends */
+  border-bottom: 1px solid var(--cell-border);
+  padding: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: left;
 }
 
-/* body cells */
-.sheet tbody td{
-  border-right:1px solid var(--cell-border);
-  border-bottom:1px solid var(--cell-border);
-  padding:8px;
-  min-width:140px;         /* ensures columns aren't too narrow */
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
+/* sticky left header label (column header for the row index) */
+.sheet thead th.row-label {
+  left: 0;
+  position: sticky;
+  z-index: 14;        /* a bit higher so it overlays other headers when needed */
+  background: var(--panel);
+  border-right: 1px solid var(--cell-border);
+  width: 80px;
+}
+
+/* table body cells */
+.sheet tbody td {
+  border-right: 1px solid var(--cell-border);
+  border-bottom: 1px solid var(--cell-border);
+  padding: 8px;
+  min-width: 140px;        /* ensure reasonable column width */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* sticky left row index column */
-.sheet tbody td.row-index{
-  background:#f7f9fb;
-  border-right:1px solid var(--cell-border);
-  text-align:center;
-  font-size:13px;
-  color:var(--muted);
-  position:sticky;
-  left:0;
-  z-index:5;
-  width:60px;
-  min-width:60px;
-}
-
-/* keep unsaved highlight */
-tr.unsaved { background: rgba(255,243,205,0.6); }
-
-/* action column at the end (narrow) */
-.sheet tbody td.row-actions {
-  width:72px;
-  min-width:72px;
-  text-align:center;
-  padding:6px;
-}
-
-/* small input padding to reduce width pressure */
-.sheet tbody input, .sheet tbody select {
-  padding:6px 8px;
-  font-size:13px;
-  min-width: 120px; /* recommend a sensible minimum */
-}
-
-/* Sticky header fallback to make sure header backgrounds overlay table */
-thead th {
-  background: white;
-  position: sticky;
-  top: 0;
-  z-index: 3;
-}
-.row-index, th.row-label {
-  background: white;
+.sheet tbody td.row-index {
+  background: var(--panel);
+  border-right: 1px solid var(--cell-border);
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
   position: sticky;
   left: 0;
+  z-index: 13;            /* above body cells but under header label */
+  width: 60px;
+  min-width: 60px;
 }
+
+/* action column (end of row) */
+.sheet tbody td.row-actions {
+  width: 72px;
+  min-width: 72px;
+  text-align: center;
+  padding: 6px;
+}
+
+/* inputs/selects inside table */
+.sheet tbody input, .sheet tbody select {
+  padding: 6px 8px;
+  font-size: 13px;
+  min-width: 120px;
+}
+
+/* unsaved row highlight */
+tr.unsaved { background: rgba(255,243,205,0.6); }
 
 /* toast */
-.toast{position:fixed;right:16px;bottom:16px;background:#111;color:white;padding:8px 12px;border-radius:6px;box-shadow:0 6px 18px rgba(2,6,23,0.36)}
-.toast.hidden{display:none}
-
-/* smaller icon buttons used in headers/rows */
-.small-icon-btn {
-  font-size:12px;
-  padding:4px 6px;
-  border-radius:6px;
-  border:1px solid transparent;
-  background:transparent;
-  cursor:pointer;
-  line-height:1;
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  background: #111;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.36);
 }
+.toast.hidden { display: none; }
+
+/* small icon buttons */
+.small-icon-btn {
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* minor responsive help: allow children inside topbar/page to shrink gracefully */
+.topbar > * , .page > * { min-width: 0; }
+
+/* debugging aid — uncomment while testing to see element bounds */
+/* * { outline: 1px solid rgba(255,0,0,0.03) } */

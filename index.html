@@ -21,9 +21,8 @@
       <!-- Sheets list (dynamic) -->
       <div>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="font-weight:600"></div>
+          <div style="font-weight:600">Sheets</div>
           <button id="addTab" class="add-tab-btn">＋ Add Tab</button>
-           
         </div>
         <div class="sheets-list" id="sheetsList">
           <!-- existing static nav preserved for fallback, but main set is dynamic below -->
@@ -49,9 +48,9 @@
          
 
           <button id="clearTable">Delete table</button>
-        </div
+        </div>
 
-        <div class="table-scroll">
+        <div class="table-scroll" id="peopleWrap">
           <table id="peopleTable" class="sheet">
             <thead id="peopleHead"></thead>
             <tbody id="peopleBody"></tbody>
