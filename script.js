@@ -893,26 +893,109 @@ if (clearTableBtn) {
 }
 
 // Export CSV
+// Export ALL sheets as a single XLSX workbook (one worksheet per tab)
 if (exportCsvBtn) {
-  exportCsvBtn.addEventListener('click', ()=>{
-    if (!activeSheetId){ toast('No active sheet'); return; }
-    const headerTitles = headers.map(h=>h.title);
-    const rows = [];
-    tbody.querySelectorAll('tr').forEach(tr=>{
-      const key = tr.dataset.key || '';
-      const cells = headers.map(h=>{
-        const el = tr.querySelector(`[data-field="${h.id}"]`);
-        const v = el ? el.value : '';
-        return (v+'').replaceAll('"','""');
-      });
-      rows.push(`"${(key||'').replaceAll('"','""')}",${cells.map(v=>`"${v}"`).join(',')}`);
-    });
-    const csv = [`"RowID",${headerTitles.map(t=>`"${(t||'').replaceAll('"','""')}"`).join(',')}`].concat(rows).join('\n');
-    const blob = new Blob([csv], { type:'text/csv' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${(pageTitle.textContent||'sheet').replaceAll(' ','_')}.csv`; document.body.appendChild(a); a.click(); a.remove();
-    toast('CSV exported');
+  exportCsvBtn.addEventListener('click', async () => {
+    try {
+      if (!sheets || !sheets.length) { toast('No sheets to export'); return; }
+      toast('Preparing workbook...');
+
+      // fetch all sheets data from DB
+      const snap = await get(ref(db, SHEETS_ROOT));
+      const all = snap.val() || {};
+
+      // Workbook container
+      const wb = XLSX.utils.book_new();
+
+      // helper to normalize/escape values for Excel (keep numbers as-is)
+      const norm = v => {
+        if (v === null || v === undefined) return '';
+        // preserve numbers, otherwise convert to string
+        if (typeof v === 'number') return v;
+        return String(v);
+      };
+
+      // iterate each sheet object
+      for (const [sid, sheetObj] of Object.entries(all)) {
+        const title = sheetObj?.meta?.title?.toString() || `Sheet ${sid}`;
+
+        // build header list ordered by `order`
+        const headersObj = sheetObj?.headers || {};
+        const headerEntries = Object.entries(headersObj)
+          .map(([hid, h]) => ({ hid, title: h?.title || '', order: (h?.order ?? 0) }))
+          .sort((a, b) => a.order - b.order);
+
+        const headerIds = headerEntries.map(h => h.hid);
+        const headerTitles = headerEntries.map(h => h.title || '');
+
+        // prepare rows as array-of-arrays (AOA) for SheetJS
+        const aoa = [];
+
+        // Put a human-friendly title row if you want (optional).
+        // If you DON'T want a title row, comment out the next line.
+        //aoa.push([title]); // sheet title as first row
+
+        // If there are no columns, add a note and attach sheet
+        if (headerIds.length === 0) {
+          aoa.push(['No columns']);
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
+          XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(title));
+          continue;
+        }
+
+        // Add header row (no RowID column)
+        aoa.push(headerTitles);
+
+        // gather rows
+        const rowsObj = sheetObj?.rows || {};
+        const rowsArr = Object.entries(rowsObj).map(([k, v]) => ({ key: k, value: v }));
+
+        // sort ascending by updatedAt (same as UI)
+        rowsArr.sort((a, b) => {
+          const ta = a.value?.updatedAt ? new Date(a.value.updatedAt).getTime() : 0;
+          const tb = b.value?.updatedAt ? new Date(b.value.updatedAt).getTime() : 0;
+          return ta - tb;
+        });
+
+        for (const r of rowsArr) {
+          const row = headerIds.map(hid => {
+            const raw = r.value?.cells?.[hid];
+            // If header type is datetime and value is iso string, you might want to convert to local or keep iso
+            // Here we keep the stored value as-is (string). Modify if you'd like formatted dates.
+            return norm(raw ?? '');
+          });
+          aoa.push(row);
+        }
+
+        // create worksheet and append; sanitize sheet name for Excel
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, sanitizeSheetName(title));
+      }
+
+      // Generate filename
+      const now = new Date();
+      const stamp = now.toISOString().replaceAll(':', '-').split('.')[0];
+      const filename = `Daily-Update-${stamp}.xlsx`;
+
+      // Write file (this downloads)
+      XLSX.writeFile(wb, filename);
+
+      toast('Workbook exported');
+    } catch (err) {
+      console.error('Export workbook error', err);
+      toast('Export failed (see console)');
+    }
   });
+} else dbg('exportCsvBtn not found');
+
+// helper: Excel sheet names cannot exceed 31 chars and cannot contain some chars
+function sanitizeSheetName(name) {
+  if (!name) return 'Sheet';
+  // remove forbidden characters: \ / ? * [ ]
+  const cleaned = name.replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31);
+  return cleaned || 'Sheet';
 }
+
 
 // selectSheet (save dirty rows first)
 async function selectSheet(sid) {
