@@ -5,20 +5,34 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Daily Update - Team Board</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* small tweak to make sheets list scrollable if many */
+    .sheets-list { display:flex;flex-direction:column;gap:6px; margin-top:6px; overflow:auto; max-height:60vh; }
+    .sheet-btn { background:transparent;border:1px solid transparent;padding:8px 10px;border-radius:8px;text-align:left;cursor:pointer;color:#0f172a; }
+    .sheet-btn.active { background:var(--accent); color:white; }
+    .add-tab-btn { margin-top:6px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:white; cursor:pointer; }
+  </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
       <div class="logo">Daily Update</div>
-      <nav>
-        <button class="menu-btn active" data-page="people">People</button>
-        <button class="menu-btn" data-page="successes">Successes</button>
-        <button class="menu-btn" data-page="discoveries">Discoveries</button>
-        <button class="menu-btn" data-page="action">Action planner</button>
-        <button class="menu-btn" data-page="concerns">Concerns</button>
-        <button class="menu-btn" data-page="comms">Comms</button>
-        <button class="menu-btn" data-page="hsse">HSSE</button>
-      </nav>
+
+      <!-- Sheets list (dynamic) -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font-weight:600"></div>
+          <button id="addTab" class="add-tab-btn">＋ Add Tab</button>
+           
+        </div>
+        <div class="sheets-list" id="sheetsList">
+          <!-- existing static nav preserved for fallback, but main set is dynamic below -->
+          <!-- We'll also keep the original nav buttons for pages (they become shortcuts) -->
+        </div>
+      </div>
+
+      
+
       <div class="sidebar-bottom">
         <button id="exportCsv">Export CSV</button>
       </div>
@@ -32,11 +46,12 @@
 
       <section id="peoplePage" class="page">
         <div class="controls">
-          <button id="addRow">＋ Add row</button>
-          <button id="clearTable">Clear table</button>
-        </div>
+         
 
-        <div class="table-wrap" id="peopleWrap">
+          <button id="clearTable">Delete table</button>
+        </div
+
+        <div class="table-scroll">
           <table id="peopleTable" class="sheet">
             <thead id="peopleHead"></thead>
             <tbody id="peopleBody"></tbody>
@@ -44,42 +59,13 @@
         </div>
       </section>
 
-      <!-- placeholders for other pages -->
-      <section id="successesPage" class="page hidden">
-        <h2>Successes</h2>
-        <p>Placeholder — connect this to another dataset or reuse the sheet component.</p>
-      </section>
-
-      <section id="discoveriesPage" class="page hidden">
-        <h2>Discoveries</h2>
-        <p>Placeholder</p>
-      </section>
-
-      <section id="actionPage" class="page hidden">
-        <h2>Action planner</h2>
-        <p>Placeholder</p>
-      </section>
-
-      <section id="concernsPage" class="page hidden">
-        <h2>Concerns</h2>
-        <p>Placeholder</p>
-      </section>
-
-      <section id="commsPage" class="page hidden">
-        <h2>Comms</h2>
-        <p>Placeholder</p>
-      </section>
-
-      <section id="hssePage" class="page hidden">
-        <h2>HSSE</h2>
-        <p>Placeholder</p>
-      </section>
+      
 
     </main>
   </div>
 
   <div id="toast" class="toast hidden"></div>
 
-  <script src="script.js"></script>
+  <script type="module" src="/script.js"></script>
 </body>
 </html>

@@ -7,44 +7,198 @@
   --cell-border:#d6d9de;
 }
 *{box-sizing:border-box}
+html,body{height:100%;} /* ensure flex children can fill viewport */
 body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:#0f172a}
-.app{display:flex;height:100vh;min-height:600px}
-.sidebar{
-  width:220px;background:linear-gradient(#fff,#fbfdff);border-right:1px solid var(--border);padding:18px 12px;display:flex;flex-direction:column;gap:12px
-}
-.logo{font-weight:700;margin-bottom:6px}
-nav{display:flex;flex-direction:column;gap:6px}
-.menu-btn{
-  background:transparent;border:1px solid transparent;padding:8px 10px;border-radius:8px;text-align:left;cursor:pointer;color:#0f172a;
-}
-.menu-btn.active{background:var(--accent);color:white;border-color:transparent}
-.sidebar-bottom{margin-top:auto}
-.sidebar-bottom button{padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:white;cursor:pointer}
 
-.content{flex:1;display:flex;flex-direction:column;padding:12px;gap:12px}
+/* App layout */
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden; /* prevents page-wide scroll */
+  min-width: 0;     /* allow children to overflow instead of expanding page */
+}
+
+/* Sidebar (fixed width, never shrink) */
+.sidebar{
+  width:220px;
+  background:linear-gradient(#fff,#fbfdff);
+  border-right:1px solid var(--border);
+  padding:18px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  flex-shrink: 0; 
+}
+/* push the bottom area to the bottom of the sidebar */
+.sidebar-bottom {
+  margin-top: auto;    /* pushes this block to the bottom in a column flex container */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+}
+
+/* nicer export button */
+.sidebar-bottom button {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: white;
+  cursor: pointer;
+}
+
+/* Content area MUST allow children to overflow horizontally */
+.content{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding:12px;
+  gap:12px;
+  min-width: 0; /* CRITICAL: allows the .table-wrap to scroll without shrinking sidebar */
+}
+
+/* Top bar and page container */
 .topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:linear-gradient(#fff,#fbfdff);border-radius:8px;border:1px solid var(--border)}
 .title{font-weight:600}
 .meta{color:var(--muted);font-size:13px}
 
-.page{background:var(--panel);border-radius:8px;padding:12px;border:1px solid var(--border);flex:1;display:flex;flex-direction:column;min-width:0}
+.page{
+  background:var(--panel);
+  border-radius:8px;
+  padding:12px;
+  border:1px solid var(--border);
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-width:0; /* allow inner scroll container to work */
+}
 .hidden{display:none}
 
 .controls{display:flex;gap:8px;margin-bottom:8px}
 .controls button{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:white;cursor:pointer}
 
-.table-wrap{overflow:auto;border:1px solid var(--cell-border);border-radius:6px;background:white;flex:1}
-.sheet{border-collapse:collapse;width:100%;min-width:900px}
-.sheet thead th{
-  position:sticky;top:0;background:#fafafa;border-bottom:1px solid var(--cell-border);z-index:2;padding:10px;font-weight:600;color:var(--muted);text-align:left
-}
-.sheet thead th.row-label{left:0;position:sticky;z-index:3;background:#f7f9fb;border-right:1px solid var(--cell-border);width:80px}
-.sheet tbody td{
-  border-right:1px solid var(--cell-border);border-bottom:1px solid var(--cell-border);padding:8px;min-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis
-}
-.sheet tbody td.row-index{background:#f7f9fb;border-right:1px solid var(--cell-border);text-align:center;font-size:13px;color:var(--muted);position:sticky;left:0;z-index:1;width:60px}
-.sheet tbody td.editing{outline:2px solid rgba(37,99,235,0.18);background:#fffdf6}
+/* ----------------------
+   SCROLLABLE TABLE AREA
+   ---------------------- */
 
+/* Use the .table-wrap as the horizontal scroll container */
+.table-wrap{
+  flex:1;                  /* grow to fill vertical space */
+  overflow-x:auto;         /* horizontal scrollbar when needed */
+  overflow-y:auto;         /* allow vertical scrolling inside the table area */
+  border:1px solid var(--cell-border);
+  border-radius:6px;
+  background:white;
+  min-width:0;             /* IMPORTANT in flex layouts */
+  -webkit-overflow-scrolling: touch; /* smoother scrolling on mobile */
+}
+
+/* Optional helper (if you still have .table-scroll in HTML) keep it consistent */
+.table-scroll{
+  /* same behavior so either class works */
+  flex:1;
+  overflow-x:auto;
+  overflow-y:auto;
+  min-width:0;
+}
+
+/* Table layout: let the table size to its content width */
+.sheet{
+  border-collapse:collapse;
+  width: max-content;      /* allow the table to be as wide as its columns */
+  /* removed min-width:100% to allow overflow; don't force table to exactly container width */
+}
+
+/* Table / header styles */
+.sheet thead th{
+  position:sticky;
+  top:0;
+  background:#fafafa;
+  border-bottom:1px solid var(--cell-border);
+  z-index:4;
+  padding:10px;
+  font-weight:600;
+  color:var(--muted);
+  text-align:left;
+}
+
+/* sticky left header label */
+.sheet thead th.row-label{
+  left:0;
+  position:sticky;
+  z-index:6; /* higher than other headers so it stays above */
+  background:#f7f9fb;
+  border-right:1px solid var(--cell-border);
+  width:80px;
+}
+
+/* body cells */
+.sheet tbody td{
+  border-right:1px solid var(--cell-border);
+  border-bottom:1px solid var(--cell-border);
+  padding:8px;
+  min-width:140px;         /* ensures columns aren't too narrow */
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+/* sticky left row index column */
+.sheet tbody td.row-index{
+  background:#f7f9fb;
+  border-right:1px solid var(--cell-border);
+  text-align:center;
+  font-size:13px;
+  color:var(--muted);
+  position:sticky;
+  left:0;
+  z-index:5;
+  width:60px;
+  min-width:60px;
+}
+
+/* keep unsaved highlight */
+tr.unsaved { background: rgba(255,243,205,0.6); }
+
+/* action column at the end (narrow) */
+.sheet tbody td.row-actions {
+  width:72px;
+  min-width:72px;
+  text-align:center;
+  padding:6px;
+}
+
+/* small input padding to reduce width pressure */
+.sheet tbody input, .sheet tbody select {
+  padding:6px 8px;
+  font-size:13px;
+  min-width: 120px; /* recommend a sensible minimum */
+}
+
+/* Sticky header fallback to make sure header backgrounds overlay table */
+thead th {
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+.row-index, th.row-label {
+  background: white;
+  position: sticky;
+  left: 0;
+}
+
+/* toast */
 .toast{position:fixed;right:16px;bottom:16px;background:#111;color:white;padding:8px 12px;border-radius:6px;box-shadow:0 6px 18px rgba(2,6,23,0.36)}
 .toast.hidden{display:none}
 
-.controls .small{padding:6px 8px;font-size:13px}
+/* smaller icon buttons used in headers/rows */
+.small-icon-btn {
+  font-size:12px;
+  padding:4px 6px;
+  border-radius:6px;
+  border:1px solid transparent;
+  background:transparent;
+  cursor:pointer;
+  line-height:1;
+}
