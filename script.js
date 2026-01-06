@@ -6,7 +6,7 @@ const stateKey = "daily-update-people-sheet";
 const COLS = ["Date","Atika","Ben","Bert","Dave","Isabelle","Louis","Mustabshira","Stephen","Note Any Upcoming Availability"];
 
 const sampleRows = [
-  ["6/12/23","","","Happy","","","Very Happy","Alwyn to block days out for diff. centre. Weds&Thurs for WACC."],
+  ["6/12/23","","","Happy","","","Very Happy",""],
   ["19/06/2023","","","Very Happy","","","Okay",""],
   ["22/6/23","","","Very Happy","","","Very Happy",""],
   ["26/6/23","","","Happy","","","Happy",""],
