@@ -1,0 +1,35 @@
+body {
+  font-family: system-ui, sans-serif;
+  padding: 24px;
+  background: #f7f8fa;
+}
+
+h1 {
+  margin-bottom: 4px;
+}
+
+.hint {
+  color: #666;
+  margin-bottom: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+th {
+  background: #f0f0f0;
+}
+
+input, select {
+  width: 100%;
+  padding: 4px;
+  box-sizing: border-box;
+}
