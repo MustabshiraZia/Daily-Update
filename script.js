@@ -461,9 +461,8 @@ function makeTr(rowKey, rowData, rowIndex) {
   tdActions.innerHTML = `
     <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
       <div style="display:flex;gap:6px">
-        <button class="small-icon-btn save-row" title="Save">💾</button>
-        <button class="small-icon-btn cancel-row" title="Revert">↺</button>
-        <button class="small-icon-btn delete-row" title="Delete">🗑</button>
+        <button class="small-icon-btn save-row" title="Save">🟢</button>
+        <button class="small-icon-btn delete-row" title="Delete">⛔</button>
       </div>
     </div>
   `;
