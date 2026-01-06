@@ -42,6 +42,7 @@ const clearTableBtn = document.getElementById('clearTable');
 const exportCsvBtn = document.getElementById('exportCsv');
 const pageTitle = document.getElementById('pageTitle');
 const toastEl = document.getElementById('toast');
+const CALENDAR_TAB_TITLE = 'Happiness Calendar';
 
 function toast(msg, t=2000){ if (!toastEl) return; toastEl.textContent = msg; toastEl.classList.remove('hidden'); setTimeout(()=> toastEl.classList.add('hidden'), t); }
 const esc = s => String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -796,6 +797,293 @@ function renderBody(rowsArray){
   renderBottomAddRow();
 }
 
+function restoreTableView() {
+  const pageEl = document.querySelector('.page');
+
+  // remove calendar
+  const cal = pageEl.querySelector('.hardcoded-calendar');
+  if (cal) cal.remove();
+
+  // show table UI again
+  pageEl.querySelectorAll('.table-scroll, .controls').forEach(el => {
+    if (el) el.style.display = '';
+  });
+}
+
+function renderHardcodedCalendarTab() {
+  const pageEl = document.querySelector('.page');
+
+  // hide table UI
+  pageEl.querySelectorAll('.table-scroll, .controls').forEach(el => {
+    if (el) el.style.display = 'none';
+  });
+
+  // remove existing calendar if any
+  const existing = pageEl.querySelector('.hardcoded-calendar');
+  if (existing) existing.remove();
+
+  // create image container
+  const wrap = document.createElement('div');
+  wrap.className = 'hardcoded-calendar';
+  wrap.style.maxWidth = '1000px';
+  wrap.style.width = '100%';
+  wrap.style.margin = '0 auto';
+  wrap.style.border = '1px solid var(--border)';
+  wrap.style.borderRadius = '8px';
+  wrap.style.overflow = 'visible';
+  wrap.style.position = 'relative';
+  wrap.style.padding = '12px 0';
+  wrap.style.display = 'flex';
+  wrap.style.justifyContent = 'center';
+  wrap.style.alignItems = 'center';
+
+  // image element (your updated clearer image)
+  const img = document.createElement('img');
+  img.src = 'https://actionforhappiness.org/sites/default/files/Jan%202026.jpg';
+  img.alt = 'Action for Happiness - January 2026';
+  img.style.display = 'block';
+  img.style.cursor = 'zoom-in';
+  img.style.objectFit = 'contain';
+  img.style.maxWidth = '100%';
+  img.style.maxHeight = '90vh';
+  img.style.width = '100%';
+  img.style.height = 'auto';
+  img.style.transformOrigin = 'top center';
+  img.style.userSelect = 'none';
+
+  // overlay (interactive): covers the image area; we'll size it to the visible image bounds
+  const overlay = document.createElement('div');
+  overlay.className = 'calendar-image-overlay';
+  overlay.style.position = 'absolute';
+  overlay.style.left = '0px';
+  overlay.style.top = '0px';
+  overlay.style.width = '0px';
+  overlay.style.height = '0px';
+  // this overlay must accept pointer events so clicks register
+  overlay.style.pointerEvents = 'auto';
+
+  // simple CSS for markers (append style tag once)
+  if (!document.getElementById('calendar-marker-styles')) {
+    const style = document.createElement('style');
+    style.id = 'calendar-marker-styles';
+    style.textContent = `
+      .calendar-image-overlay .cal-marker {
+        position: absolute;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.95);
+        border: 2px solid rgba(200,30,30,0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: rgba(200,30,30,1);
+        font-size: 18px;
+        transform: translate(-50%, -50%); /* center on coords */
+        box-shadow: 0 6px 18px rgba(2,6,23,0.08);
+        cursor: pointer;
+        user-select: none;
+        z-index: 50;
+      }
+      /* smaller markers on small screens */
+      @media (max-width: 520px) {
+        .calendar-image-overlay .cal-marker { width: 28px; height: 28px; font-size: 14px; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  wrap.appendChild(img);
+  wrap.appendChild(overlay);
+  pageEl.appendChild(wrap);
+
+  // storage key (unique per image src)
+  const STORAGE_KEY = 'calendar_markers:' + img.src;
+
+  // markers model: array of {xPct, yPct, id}
+  let markers = [];
+
+  // helpers: persist to localStorage (you can replace these with Firebase writes)
+  function saveMarkersToLocal() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(markers)); } catch (e) { console.warn('saveMarkers failed', e); }
+  }
+  function loadMarkersFromLocal() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      return JSON.parse(raw);
+    } catch (e) { console.warn('loadMarkers failed', e); return []; }
+  }
+
+  // (Optional) if you want server persistence, implement these to call your Firebase DB:
+  // async function saveMarkersToFirebase(markersArr) { ... }
+  // async function loadMarkersFromFirebase() { ... }
+
+  // create a DOM marker for a marker object
+  function createMarkerEl(marker) {
+    const el = document.createElement('div');
+    el.className = 'cal-marker';
+    el.dataset.id = marker.id;
+    el.title = 'Click to toggle (remove)';
+    el.textContent = '✕';
+    // position using percentages relative to overlay (overlay left/top already aligned to image)
+    el.style.left = marker.xPct + '%';
+    el.style.top = marker.yPct + '%';
+
+    // click on marker removes it
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      removeMarkerById(marker.id);
+    });
+    return el;
+  }
+
+  // render all markers into the overlay (clears and re-adds)
+  function renderMarkers() {
+    overlay.innerHTML = ''; // remove all children (fast)
+    for (const m of markers) {
+      const el = createMarkerEl(m);
+      overlay.appendChild(el);
+    }
+  }
+
+  // remove marker by id
+  function removeMarkerById(id) {
+    const before = markers.length;
+    markers = markers.filter(m => m.id !== id);
+    if (markers.length !== before) {
+      saveMarkersToLocal();
+      // (Optional) await saveMarkersToFirebase(markers);
+      renderMarkers();
+    }
+  }
+
+  // add marker at percentage coords (xPct, yPct)
+  function addMarkerAt(xPct, yPct) {
+    // if there's an existing marker within tolerance (e.g., 3% both axes), toggle it (remove)
+    const tol = 3; // percent tolerance for detection
+    const nearby = markers.find(m => Math.abs(m.xPct - xPct) <= tol && Math.abs(m.yPct - yPct) <= tol);
+    if (nearby) { removeMarkerById(nearby.id); return; }
+
+    const id = 'm-' + Date.now() + '-' + Math.floor(Math.random()*9999);
+    const marker = { id, xPct: Number(xPct.toFixed(2)), yPct: Number(yPct.toFixed(2)) };
+    markers.push(marker);
+    saveMarkersToLocal();
+    // (Optional) queue saveMarkersToFirebase(markers);
+    const el = createMarkerEl(marker);
+    overlay.appendChild(el);
+  }
+
+  // convert a client click point (pageX,pageY) to percentages inside the visible image
+  function pointToImagePercent(pageX, pageY) {
+    const imgRect = img.getBoundingClientRect();
+    const left = imgRect.left;
+    const top = imgRect.top;
+    const w = imgRect.width;
+    const h = imgRect.height;
+    // clamp inside image bounds
+    const cx = Math.min(Math.max(pageX - left, 0), w);
+    const cy = Math.min(Math.max(pageY - top, 0), h);
+    const xPct = (cx / w) * 100;
+    const yPct = (cy / h) * 100;
+    return { xPct, yPct };
+  }
+
+  // reposition overlay to match image bounding box (and re-render)
+  function updateOverlayPosition() {
+    const imgRect = img.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    const leftOffset = imgRect.left - wrapRect.left;
+    const topOffset = imgRect.top - wrapRect.top;
+    overlay.style.left = `${leftOffset}px`;
+    overlay.style.top = `${topOffset}px`;
+    overlay.style.width = `${imgRect.width}px`;
+    overlay.style.height = `${imgRect.height}px`;
+    // overlay uses absolute positioning in wrapper coords; markers are percent-based inside overlay
+    // re-render to ensure markers in correct positions after size change
+    renderMarkers();
+  }
+
+  // click handler on overlay: add/toggle marker
+  function onOverlayClick(e) {
+    // compute percentage location relative to image
+    const { xPct, yPct } = pointToImagePercent(e.pageX, e.pageY);
+    addMarkerAt(xPct, yPct);
+  }
+
+  // load initial markers and render after sizing
+  markers = loadMarkersFromLocal(); // if you prefer Firebase load, replace this call
+  // markers = await loadMarkersFromFirebase(); // if implemented
+
+  // responsive fitting (keep the fit logic so height changes behave like width changes)
+  let naturalW = 0, naturalH = 0;
+  let resizeTimer = null;
+  function fitImageToViewport() {
+    if (!naturalW || !naturalH) return;
+
+    const wrapRect = wrap.getBoundingClientRect();
+    const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+
+    const availableW = Math.max(wrapRect.width || vw, 100);
+    const reservedForChrome = 120;
+    const availableH = Math.max(vh - reservedForChrome, 200);
+
+    const viewportRatio = availableW / availableH;
+    const imageRatio = naturalW / naturalH;
+
+    if (viewportRatio > imageRatio) {
+      // constrain by height but never exceed natural height (prevents blur)
+      const targetHeight = Math.min(availableH, naturalH);
+      img.style.height = `${targetHeight}px`;
+      img.style.width = 'auto';
+      img.style.maxWidth = 'none';
+    } else {
+      // constrain by width but never upscale beyond natural width
+      const targetWidth = Math.min(availableW, naturalW);
+      img.style.width = `${targetWidth}px`;
+      img.style.height = 'auto';
+      img.style.maxHeight = 'none';
+    }
+
+    // after layout: reposition overlay
+    requestAnimationFrame(updateOverlayPosition);
+  }
+
+  // on image load
+  img.addEventListener('load', () => {
+    naturalW = img.naturalWidth || img.width || 1000;
+    naturalH = img.naturalHeight || img.height || 800;
+    wrap.style.minHeight = '240px';
+    fitImageToViewport();
+  });
+
+  // debounce resize
+  function onWindowResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      fitImageToViewport();
+    }, 80);
+  }
+  window.addEventListener('resize', onWindowResize);
+
+  // attach overlay click (use capture on overlay so clicks hit it)
+  overlay.addEventListener('click', onOverlayClick);
+
+  // if image cached, initialize now
+  if (img.complete && img.naturalWidth) {
+    naturalW = img.naturalWidth;
+    naturalH = img.naturalHeight;
+    setTimeout(() => fitImageToViewport(), 20);
+  }
+
+  // small reflows to ensure perfect placement
+  setTimeout(() => fitImageToViewport(), 120);
+  setTimeout(() => fitImageToViewport(), 600);
+}
+
+
 // ---------- UI actions wiring ----------
 // Add Tab
 if (addTabBtn) {
@@ -1012,8 +1300,16 @@ async function selectSheet(sid) {
   activeSheetId = sid;
   const s = sheets.find(x => x.id === sid);
   pageTitle.textContent = s?.title || 'Sheet';
-  renderSheetsList();
+renderSheetsList();
+
+// 🔥 HARD-CODED TAB BEHAVIOUR
+if (s?.title === CALENDAR_TAB_TITLE) {
+  renderHardcodedCalendarTab();
+} else {
+  restoreTableView();
   subscribeToActiveSheet();
+}
+
 }
 
 // auth + start

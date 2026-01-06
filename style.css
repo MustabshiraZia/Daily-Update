@@ -257,3 +257,68 @@ tr.unsaved { background: rgba(255,243,205,0.6); }
 
 /* debugging aid — uncomment while testing to see element bounds */
 /* * { outline: 1px solid rgba(255,0,0,0.03) } */
+
+
+
+/* =================== CSS for Happiness Calendar=========================== */
+/* overlay highlight for calendar image */
+/* =================== CSS for Happiness Calendar =========================== */
+/* cross-only marker (no square background) */
+/* =================== CSS for Happiness Calendar =========================== */
+/* cross-only marker with soft transparency */
+.calendar-image-overlay .cal-marker {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  z-index: 50;
+
+  /* no box at all */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+
+  cursor: pointer;
+}
+
+/* translucent cross strokes */
+.calendar-image-overlay .cal-marker::before,
+.calendar-image-overlay .cal-marker::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  width: 80%;                 /* stroke length */
+  height: 28%;                /* stroke thickness */
+  background: rgba(102, 3, 64, 0.473); /* ✨ soft translucent pink */
+  border-radius: 999px;       /* smooth rounded ends */
+  transform-origin: center;
+
+  /* subtle softness (optional but nice) */
+  box-shadow: 0 2px 6px rgba(245, 158, 171, 0.35);
+}
+
+/* diagonal strokes */
+.calendar-image-overlay .cal-marker::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.calendar-image-overlay .cal-marker::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* smaller + slightly thicker on mobile */
+@media (max-width:520px) {
+  .calendar-image-overlay .cal-marker {
+    width: 40px;
+    height: 40px;
+  }
+  .calendar-image-overlay .cal-marker::before,
+  .calendar-image-overlay .cal-marker::after {
+    height: 22%;
+  }
+}
+
+
+/*  CSS for Happiness Calendar */
