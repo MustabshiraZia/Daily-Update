@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Daily Update - Team Board</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">Daily Update</div>
+      <nav>
+        <button class="menu-btn active" data-page="people">People</button>
+        <button class="menu-btn" data-page="successes">Successes</button>
+        <button class="menu-btn" data-page="discoveries">Discoveries</button>
+        <button class="menu-btn" data-page="action">Action planner</button>
+        <button class="menu-btn" data-page="concerns">Concerns</button>
+        <button class="menu-btn" data-page="comms">Comms</button>
+        <button class="menu-btn" data-page="hsse">HSSE</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button id="exportCsv">Export CSV</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div class="title" id="pageTitle">People</div>
+        <div class="meta">Share URL with team — edits sync live</div>
+      </header>
+
+      <section id="peoplePage" class="page">
+        <div class="controls">
+          <button id="addRow">＋ Add row</button>
+          <button id="clearTable">Clear table</button>
+        </div>
+
+        <div class="table-wrap" id="peopleWrap">
+          <table id="peopleTable" class="sheet">
+            <thead id="peopleHead"></thead>
+            <tbody id="peopleBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- placeholders for other pages -->
+      <section id="successesPage" class="page hidden">
+        <h2>Successes</h2>
+        <p>Placeholder — connect this to another dataset or reuse the sheet component.</p>
+      </section>
+
+      <section id="discoveriesPage" class="page hidden">
+        <h2>Discoveries</h2>
+        <p>Placeholder</p>
+      </section>
+
+      <section id="actionPage" class="page hidden">
+        <h2>Action planner</h2>
+        <p>Placeholder</p>
+      </section>
+
+      <section id="concernsPage" class="page hidden">
+        <h2>Concerns</h2>
+        <p>Placeholder</p>
+      </section>
+
+      <section id="commsPage" class="page hidden">
+        <h2>Comms</h2>
+        <p>Placeholder</p>
+      </section>
+
+      <section id="hssePage" class="page hidden">
+        <h2>HSSE</h2>
+        <p>Placeholder</p>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
