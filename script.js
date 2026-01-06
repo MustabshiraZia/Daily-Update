@@ -1,3 +1,4 @@
+
 // script.js — cleaned and fixed version (localStorage persistence removed, robust save, delete tab)
 const firebaseConfig = {
   apiKey: "AIzaSyBrjcpI8EMT8tnfSCS82PP9FmFw1A7hv6Y",
@@ -169,27 +170,32 @@ function renderSheetsList(){
     del.style.cursor = 'pointer';
     del.style.padding = '4px 6px';
     del.style.fontSize = '14px';
-    del.addEventListener('click', async (ev) => {
-      ev.stopPropagation();
-      const sid = s.id;
-      if (!confirm(`Delete sheet "${s.title || sid}" and all its data? This cannot be undone.`)) return;
-      try {
-        // If deleting active, clear local active to avoid UI race
-        const wasActive = (activeSheetId === sid);
-        await remove(ref(db, `${SHEETS_ROOT}/${sid}`));
-        toast('Sheet deleted');
-        dbg('Deleted sheet', sid);
-        if (wasActive) {
-          activeSheetId = null; // onValue will choose another or create default
-          // clear UI immediately
-          if (thead) thead.innerHTML = '';
-          if (tbody) tbody.innerHTML = '';
-        }
-      } catch (err) {
-        console.error('Failed to delete sheet', err);
-        toast('Delete failed (see console)');
-      }
-    });
+    del.disabled = true;
+del.style.opacity = '0.3';
+del.style.cursor = 'not-allowed';
+del.title = 'Sheet deletion disabled';
+
+    // del.addEventListener('click', async (ev) => {
+    //   ev.stopPropagation();
+    //   const sid = s.id;
+    //   if (!confirm(`Delete sheet "${s.title || sid}" and all its data? This cannot be undone.`)) return;
+    //   try {
+    //     // If deleting active, clear local active to avoid UI race
+    //     const wasActive = (activeSheetId === sid);
+    //     await remove(ref(db, `${SHEETS_ROOT}/${sid}`));
+    //     toast('Sheet deleted');
+    //     dbg('Deleted sheet', sid);
+    //     if (wasActive) {
+    //       activeSheetId = null; // onValue will choose another or create default
+    //       // clear UI immediately
+    //       if (thead) thead.innerHTML = '';
+    //       if (tbody) tbody.innerHTML = '';
+    //     }
+    //   } catch (err) {
+    //     console.error('Failed to delete sheet', err);
+    //     toast('Delete failed (see console)');
+    //   }
+    // });
 
     wrapper.appendChild(btn);
     wrapper.appendChild(del);
@@ -933,7 +939,7 @@ if (exportCsvBtn) {
 
         // Put a human-friendly title row if you want (optional).
         // If you DON'T want a title row, comment out the next line.
-        //aoa.push([title]); // sheet title as first row
+       // aoa.push([title]); // sheet title as first row
 
         // If there are no columns, add a note and attach sheet
         if (headerIds.length === 0) {
@@ -975,7 +981,7 @@ if (exportCsvBtn) {
       // Generate filename
       const now = new Date();
       const stamp = now.toISOString().replaceAll(':', '-').split('.')[0];
-      const filename = `Daily-Update-${stamp}.xlsx`;
+      const filename = `daily-update-${stamp}.xlsx`;
 
       // Write file (this downloads)
       XLSX.writeFile(wb, filename);
